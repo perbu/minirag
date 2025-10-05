@@ -1,14 +1,14 @@
 # MiniRAG
 
-A lightweight, embeddable Retrieval-Augmented Generation (RAG) library for Go that provides semantic search over markdown documentation.
+A Retrieval-Augmented Generation (RAG) library for Go that provides semantic search over markdown documentation.
 
 ## Features
 
-- **Simple API**: Three packages, minimal dependencies
-- **Semantic search**: High-quality OpenAI embeddings
-- **Flexible**: Use pre-built indexes or build your own
-- **Fast**: In-memory cosine similarity search
-- **Embeddable**: Bundle docs and embeddings in your binary
+- Three packages with minimal dependencies
+- Semantic search using OpenAI embeddings
+- Supports pre-built indexes or custom index creation
+- In-memory cosine similarity search
+- Can bundle documentation and embeddings in binaries
 
 ## Installation
 
@@ -18,7 +18,7 @@ go get github.com/perbu/minirag
 
 ## Quick Start
 
-Three simple steps to add semantic search to your application:
+Basic usage:
 
 ### 1. Load an Index
 
@@ -27,7 +27,7 @@ import "github.com/perbu/minirag/pkg/minirag"
 
 index, err := minirag.LoadIndexFromFile("embeddings/index.gob")
 if err != nil {
-    log.Fatal(err)
+log.Fatal(err)
 }
 ```
 
@@ -46,11 +46,9 @@ queryEmbedding, _ := emb.Embed("How do I configure authentication?")
 results := minirag.Search(index, queryEmbedding, 5, 0.7)
 
 for _, result := range results {
-    fmt.Printf("%s: %s\n", result.Chunk.Path, result.Chunk.Content)
+fmt.Printf("%s: %s\n", result.Chunk.Path, result.Chunk.Content)
 }
 ```
-
-That's it! See below for complete examples.
 
 ## API Guide
 
@@ -151,7 +149,7 @@ func extractTexts(chunks []minirag.Chunk) []string {
 Use the simple embedder for local testing:
 
 ```go
-// No API key needed - perfect for tests
+// No API key needed
 emb := embedder.NewSimpleEmbedder(128)
 
 // Same interface as OpenAI embedder
@@ -189,9 +187,9 @@ texts := []string{"doc1", "doc2", "doc3", /* ... */}
 openaiEmb := emb.(*embedder.OpenAIEmbedder)
 
 embeddings, _ := openaiEmb.EmbedBatchWithProgress(texts,
-	func(completed, total int) {
-		fmt.Printf("Progress: %d/%d\n", completed, total)
-	},
+func (completed, total int) {
+fmt.Printf("Progress: %d/%d\n", completed, total)
+},
 )
 ```
 
@@ -202,27 +200,29 @@ embeddings, _ := openaiEmb.EmbedBatchWithProgress(texts,
 Core types and search functions.
 
 **Types:**
+
 ```go
 type Chunk struct {
-	Path    string // e.g., "api/auth.md"
-	Content string // Section text
-	Heading string // e.g., "Authentication"
-	Offset  int    // Position in file
+Path    string // e.g., "api/auth.md"
+Content string // Section text
+Heading string // e.g., "Authentication"
+Offset  int // Position in file
 }
 
 type VectorIndex struct {
-	Chunks     []Chunk
-	Embeddings [][]float32
-	Dimension  int
+Chunks     []Chunk
+Embeddings [][]float32
+Dimension  int
 }
 
 type SearchResult struct {
-	Chunk Chunk
-	Score float32 // 0.0-1.0, higher = better match
+Chunk Chunk
+Score float32 // 0.0-1.0, higher = better match
 }
 ```
 
 **Functions:**
+
 ```go
 // Load/save indexes
 LoadIndexFromFile(path string) (*VectorIndex, error)
@@ -240,28 +240,30 @@ CosineSimilarity(a, b []float32) float32
 Generate vector embeddings for text.
 
 **Interface:**
+
 ```go
 type Embedder interface {
-	Embed(text string) ([]float32, error)
-	EmbedBatch(texts []string) ([][]float32, error)
-	Dimension() int
-	ModelInfo() string
+Embed(text string) ([]float32, error)
+EmbedBatch(texts []string) ([][]float32, error)
+Dimension() int
+ModelInfo() string
 }
 ```
 
 **Implementations:**
+
 ```go
 // OpenAI embeddings (requires OPENAI_API_KEY)
 NewOpenAIEmbedder(model string) (*OpenAIEmbedder, error)
-  // models: "text-embedding-3-small" (1536d), "text-embedding-3-large" (3072d)
+// models: "text-embedding-3-small" (1536d), "text-embedding-3-large" (3072d)
 
 // Simple hash-based embedder (for testing, no API needed)
 NewSimpleEmbedder(dimension int) *SimpleEmbedder
 
 // Progress tracking
 (*OpenAIEmbedder).EmbedBatchWithProgress(
-	texts []string,
-	progressFn func(completed, total int),
+texts []string,
+progressFn func (completed, total int),
 ) ([][]float32, error)
 ```
 
@@ -270,6 +272,7 @@ NewSimpleEmbedder(dimension int) *SimpleEmbedder
 Load and chunk markdown documents.
 
 **Functions:**
+
 ```go
 // Load from embedded filesystem
 LoadAndChunkAll(fsys embed.FS, root string) ([]Chunk, error)
@@ -295,10 +298,10 @@ echo "OPENAI_API_KEY=sk-..." > .env
 
 ### Models
 
-| Model | Dimensions | Use Case |
-|-------|-----------|----------|
-| `text-embedding-3-small` | 1536 | Fast, cost-effective (recommended) |
-| `text-embedding-3-large` | 3072 | Higher quality, more expensive |
+| Model                    | Dimensions | Use Case                           |
+|--------------------------|------------|------------------------------------|
+| `text-embedding-3-small` | 1536       | Fast, cost-effective (recommended) |
+| `text-embedding-3-large` | 3072       | Higher quality, more expensive     |
 
 ### Search Parameters
 
@@ -308,48 +311,46 @@ results := minirag.Search(index, queryEmbedding, topK, threshold)
 
 - **`topK`**: Max results to return (e.g., `5`, `10`)
 - **`threshold`**: Minimum similarity score (0.0-1.0)
-  - `0.5` - Very permissive
-  - `0.7` - Balanced (recommended)
-  - `0.8` - Strict, high precision
+    - `0.5` - Very permissive
+    - `0.7` - Balanced (recommended)
+    - `0.8` - Strict, high precision
 
 ## Architecture
 
-MiniRAG uses a simple but effective architecture:
-
 1. **Build time**:
-   - Documents are chunked by markdown headings
-   - Embeddings generated via OpenAI API
-   - Index serialized to `.gob` file
+    - Documents are chunked by markdown headings
+    - Embeddings generated via OpenAI API
+    - Index serialized to `.gob` file
 
 2. **Runtime**:
-   - Index loaded into memory
-   - Queries embedded on-the-fly
-   - Cosine similarity search (brute force, very fast for <100k chunks)
+    - Index loaded into memory
+    - Queries embedded on-the-fly
+    - Cosine similarity search (brute force, very fast for <100k chunks)
 
 3. **Zero dependencies at runtime**:
-   - No database needed
-   - No external services (except for query embedding)
-   - Can embed index in binary with `//go:embed`
+    - No database needed
+    - No external services (except for query embedding)
+    - Can embed index in binary with `//go:embed`
 
 ## Best Practices
 
-### For Best Search Quality
+### Search Quality
 
-- **Chunk size**: Keep markdown sections 100-500 words for optimal results
-- **Threshold**: Start at 0.7, tune based on precision/recall needs
-- **Model**: Use `text-embedding-3-small` for most use cases
+- Markdown sections of 100-500 words produce better results
+- Start with threshold 0.7, adjust based on precision/recall requirements
+- `text-embedding-3-small` works for most use cases
 
-### For Performance
+### Performance
 
-- **Pre-compute**: Generate embeddings once, reuse the `.gob` file
-- **Batch operations**: Use `EmbedBatch()` instead of loops (10x concurrent requests)
-- **Index size**: ~3KB per chunk; split very large doc sets into multiple indexes
+- Generate embeddings once, reuse the `.gob` file
+- Use `EmbedBatch()` instead of loops (handles 10 concurrent requests)
+- Index size is ~3KB per chunk; split large document sets into multiple indexes
 
-### For Cost
+### Cost
 
-- **One-time**: ~$0.02 per 1000 chunks (index generation)
-- **Per query**: ~$0.00002 per query (embedding)
-- **Optimize**: Cache common queries, use simple embedder for tests
+- Index generation: ~$0.02 per 1000 chunks (one-time)
+- Per query: ~$0.00002 per query (embedding)
+- Cache common queries or use simple embedder for tests
 
 ## Project Structure
 
@@ -377,12 +378,13 @@ Typical performance with OpenAI text-embedding-3-small:
 - **Memory usage**: ~4KB per chunk at runtime
 
 Cost estimates:
+
 - ~$0.02 per 1000 chunks (one-time)
 - Queries: ~$0.00002 per query (if using OpenAI for query embedding)
 
 ## CLI Tools
 
-MiniRAG includes ready-to-use command-line tools:
+Command-line tools included:
 
 ### Generate Embeddings
 

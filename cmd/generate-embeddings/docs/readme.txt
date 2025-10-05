@@ -1,0 +1,1 @@
+Delete this file and put the files you want indexed in here.

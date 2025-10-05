@@ -9,10 +9,6 @@
 # Environment and secrets
 .env
 
-# Documentation (copy your docs here manually)
-cmd/test-loader/docs/
-cmd/generate-embeddings/docs/
-
 # Go build artifacts
 *.test
 *.out
